@@ -2,67 +2,68 @@ name: Go Web App CI/CD
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    - name: Setup Go
-      uses: actions/setup-go@v4
-      with:
-        go-version: '1.21'
+      - name: Setup Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.21'
 
-    - name: Build Go app
-      run: |
-        echo "🔨 Building Go application..."
-        go mod download
-        go build -o main .
-        echo "✅ Go app built successfully"
+      - name: Build and Test
+        run: |
+          echo "🔨 Building Go application..."
+          go mod download
+          go build -o main .
+          echo "✅ Build completed"
+          
+          echo "🧪 Running tests..."
+          go test ./...
+          echo "✅ Tests passed"
 
-    - name: Test
-      run: |
-        echo "🧪 Running tests..."
-        go test ./...
-        echo "✅ All tests passed"
-
-  docker-setup:
+  docker:
     runs-on: ubuntu-latest
     needs: build
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v3
+      - name: Debug - Print secrets info
+        run: |
+          echo "Username: ${{ secrets.DOCKERHUB_USERNAME }}"
+          echo "Token length: ${#DOCKERHUB_TOKEN}"  # This will show token length only
 
-    - name: Login to DockerHub
-      uses: docker/login-action@v3
-      with:
-        username: ${{ secrets.DOCKERHUB_USERNAME }}
-        password: ${{ secrets.DOCKER_HUB_TOCKEN }}
+      - name: Login to DockerHub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-    - name: Build and Push Docker image
-      run: |
-        echo "🐳 Building Docker image..."
-        docker build -t 334yash/go-web-app:latest .
-        echo "✅ Docker image built"
-        
-        echo "📦 Pushing to DockerHub..."
-        docker push 334yash/go-web-app:latest
-        echo "🎉 Image pushed to DockerHub successfully!"
+      - name: Build Docker Image
+        run: |
+          echo "🐳 Building Docker image..."
+          docker build -t 334yash/go-web-app:latest .
+          echo "✅ Docker image built"
+
+      - name: Push to DockerHub
+        run: |
+          echo "📦 Pushing to DockerHub..."
+          docker push 334yash/go-web-app:latest
+          echo "🎉 Docker image pushed successfully!"
 
   success:
     runs-on: ubuntu-latest
-    needs: docker-setup
+    needs: docker
     steps:
-    - name: Completion Message
-      run: |
-        echo "🎉 🎉 🎉 CI/CD Pipeline COMPLETED SUCCESSFULLY!"
-        echo "✅ Code built and tested"
-        echo "✅ Docker image created and pushed"
-        echo "📦 Your image: https://hub.docker.com/r/334yash/go-web-app"
-
+      - name: Completion Message
+        run: |
+          echo "🎉 🎉 🎉 CI/CD Pipeline COMPLETED!"
+          echo "✅ Code built and tested"
+          echo "✅ Docker image pushed to DockerHub"
+          echo "📦 View at: https://hub.docker.com/r/334yash/go-web-app"
