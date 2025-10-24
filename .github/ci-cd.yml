@@ -66,3 +66,4 @@ jobs:
         echo "✅ Code built and tested"
         echo "✅ Docker image pushed to DockerHub"
         echo "📝 Next: Setup Kubernetes deployment"
+
